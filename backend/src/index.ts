@@ -25,6 +25,10 @@ const app = Fastify({
 app.register(cors, {
   origin: env.FRONTEND_URL,
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflight: true,
+  strictPreflight: false,
 })
 
 app.register(jwt, {
