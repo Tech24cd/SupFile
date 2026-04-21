@@ -4,6 +4,11 @@ import jwt from '@fastify/jwt'
 import multipart from '@fastify/multipart'
 import { env } from './config'
 
+
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString()
+}
+
 const app = Fastify({
   logger: {
     level: env.NODE_ENV === 'production' ? 'warn' : 'info',
