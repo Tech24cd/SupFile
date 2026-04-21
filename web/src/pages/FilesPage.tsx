@@ -130,6 +130,7 @@ export default function FilesPage() {
         <FileGrid
           files={files}
           folders={folders}
+          currentFolderId={folderId}
           onPreview={setPreview}
           onDeleteFile={(id) => deleteFile.mutate(id)}
           onDeleteFolder={(id) => deleteFolder.mutate(id)}
@@ -138,6 +139,7 @@ export default function FilesPage() {
         <FileList
           files={files}
           folders={folders}
+          currentFolderId={folderId}
           onPreview={setPreview}
           onDeleteFile={(id) => deleteFile.mutate(id)}
           onDeleteFolder={(id) => deleteFolder.mutate(id)}
