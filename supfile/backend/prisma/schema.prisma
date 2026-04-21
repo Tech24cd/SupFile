@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==============================
+// UTILISATEURS
+// ==============================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String?   // null si connexion OAuth uniquement
+  avatarUrl     String?
+  quotaBytes    BigInt    @default(32212254720) // 30 Go
+  usedBytes     BigInt    @default(0)
+  theme         Theme     @default(LIGHT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  oauthAccounts OAuthAccount[]
+  files         File[]
+  folders       Folder[]
+  shareLinks    ShareLink[]
+  sharedWithMe  FolderShare[]  @relation("SharedWithUser")
+  sharedByMe    FolderShare[]  @relation("SharedByUser")
+  trashItems    TrashItem[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model OAuthAccount {
+  id           String   @id @default(cuid())
+  provider     String   // "google" | "github" | "microsoft"
+  providerId   String   // l'id chez le provider
+  accessToken  String?
+  refreshToken String?
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@unique([provider, providerId])
+  @@map("oauth_accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@map("sessions")
+}
+
+// ==============================
+// FICHIERS & DOSSIERS
+// ==============================
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Folder?  @relation("FolderTree", fields: [parentId], references: [id])
+  children  Folder[] @relation("FolderTree")
+  files     File[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sharedLinks ShareLink[]
+  shares      FolderShare[]
+  trashItems  TrashItem[]
+
+  @@map("folders")
+}
+
+model File {
+  id           String   @id @default(cuid())
+  name         String
+  mimeType     String
+  sizeBytes    BigInt
+  storagePath  String   // chemin physique sur le volume Docker
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId     String?
+  folder       Folder?  @relation(fields: [folderId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  shareLinks   ShareLink[]
+  trashItems   TrashItem[]
+
+  @@map("files")
+}
+
+// ==============================
+// CORBEILLE
+// ==============================
+
+model TrashItem {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileId      String?
+  file        File?     @relation(fields: [fileId], references: [id])
+  folderId    String?
+  folder      Folder?   @relation(fields: [folderId], references: [id])
+  originalPath String   // pour la restauration
+  deletedAt   DateTime  @default(now())
+
+  @@map("trash_items")
+}
+
+// ==============================
+// PARTAGE
+// ==============================
+
+model ShareLink {
+  id          String    @id @default(cuid())
+  token       String    @unique @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileId      String?
+  file        File?     @relation(fields: [fileId], references: [id])
+  folderId    String?
+  folder      Folder?   @relation(fields: [folderId], references: [id])
+  passwordHash String?  // null = pas de mot de passe
+  expiresAt   DateTime?
+  accessCount Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@map("share_links")
+}
+
+// Partage de dossier entre utilisateurs inscrits
+model FolderShare {
+  id         String   @id @default(cuid())
+  folderId   String
+  folder     Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  ownerId    String
+  owner      User     @relation("SharedByUser", fields: [ownerId], references: [id], onDelete: Cascade)
+  sharedWithId String
+  sharedWith User     @relation("SharedWithUser", fields: [sharedWithId], references: [id], onDelete: Cascade)
+  canWrite   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([folderId, sharedWithId])
+  @@map("folder_shares")
+}
+
+// ==============================
+// ENUMS
+// ==============================
+
+enum Theme {
+  LIGHT
+  DARK
+}
