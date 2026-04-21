@@ -49,12 +49,12 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
     container_name: supfile_web
     restart: unless-stopped
     depends_on:
       - backend
-    environment:
-      VITE_API_URL: ${VITE_API_URL}
     ports:
       - "${WEB_PORT}:80"
 
