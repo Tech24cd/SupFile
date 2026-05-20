@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "SUPFile",
+    "slug": "supfile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "splash": { "backgroundColor": "#4f46e5" },
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.supfile.app" },
+    "android": { "adaptiveIcon": { "backgroundColor": "#4f46e5" }, "package": "com.supfile.app" },
+    "scheme": "supfile",
+    "plugins": ["expo-router", "expo-document-picker"]
+  }
+}
